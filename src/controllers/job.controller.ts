@@ -1,11 +1,16 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import Job from "../models/job.model";
 import { getNextSequence } from "../utils/getNextSequence";
 import mongoose from "mongoose";
 import Docket from "../models/docket.model";
 import { sendApiResponse } from "../utils/sendApiResponse";
+import { HttpError } from "../utils/httpError";
 
-export const createJob = async (req: Request, res: Response) => {
+export const createJob = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -13,11 +18,7 @@ export const createJob = async (req: Request, res: Response) => {
     const { clientName, siteLocation } = req.body;
 
     if (!clientName || !siteLocation) {
-      await session.abortTransaction();
-      session.endSession();
-      return res
-        .status(400)
-        .json({ status: false, message: "Missing required fields" });
+      throw new HttpError(400, "Missing required fields");
     }
 
     // 1. Generate next sequence safely
@@ -32,23 +33,24 @@ export const createJob = async (req: Request, res: Response) => {
     });
 
     await session.commitTransaction();
-    session.endSession();
 
     return sendApiResponse(res, 201, true, "Job created successfully", {
       data: job[0],
       is_show: true,
     });
   } catch (err: any) {
-    console.error(err);
     await session.abortTransaction();
+    next(err);
+  } finally {
     session.endSession();
-    return sendApiResponse(res, 500, false, err?.message || "Server error", {
-      is_show: true,
-    });
   }
 };
 
-export const getAllJobs = async (req: Request, res: Response) => {
+export const getAllJobs = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { status, page = 1, limit = 10 } = req.query;
 
@@ -73,20 +75,21 @@ export const getAllJobs = async (req: Request, res: Response) => {
       },
     });
   } catch (err) {
-    console.error(err);
-    return sendApiResponse(res, 500, false, "Server error", {
-      is_show: true,
-    });
+    next(err);
   }
 };
 
-export const getJobById = async (req: Request, res: Response) => {
+export const getJobById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { id } = req.params;
 
     const job = await Job.findById(id);
     if (!job) {
-      return res.status(404).json({ status: false, message: "Job not found" });
+      if (!job) throw new HttpError(404, "Job not found");
     }
 
     const dockets = await Docket.find({ jobId: id }).sort({ date: -1 });
@@ -96,20 +99,21 @@ export const getJobById = async (req: Request, res: Response) => {
       is_show: true,
     });
   } catch (err) {
-    console.error(err);
-    return sendApiResponse(res, 500, false, "Server error", {
-      is_show: true,
-    });
+    next(err);
   }
 };
 
-export const closeJob = async (req: Request, res: Response) => {
+export const closeJob = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { id } = req.params;
 
     const job = await Job.findById(id);
     if (!job) {
-      return res.status(404).json({ status: false, message: "Job not found" });
+      throw new HttpError(404, "Job not found");
     }
 
     job.status = "closed";
@@ -120,9 +124,6 @@ export const closeJob = async (req: Request, res: Response) => {
       is_show: true,
     });
   } catch (err) {
-    console.error(err);
-    return sendApiResponse(res, 500, false, "Server error", {
-      is_show: true,
-    });
+    next(err);
   }
 };

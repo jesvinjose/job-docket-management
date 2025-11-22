@@ -8,6 +8,8 @@ import connectDb from "./config/db";
 
 import jobRoutes from "./routes/job.routes";
 import docketRoutes from "./routes/docket.routes";
+import { errorHandler } from "./middlewares/errorHandler";
+import { sendApiResponse } from "./utils/sendApiResponse";
 
 const app = express();
 
@@ -29,18 +31,12 @@ app.use("/jobs", jobRoutes);
 app.use("/dockets", docketRoutes);
 
 // 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    status: false,
-    message: "Route not found",
-  });
-});
+app.use((req, res) =>
+  sendApiResponse(res, 404, false, "Route not found", { is_show: true })
+);
 
-// Error handler
-app.use((err: any, req: any, res: any, next: any) => {
-  console.error(err);
-  res.status(500).json({ status: false, message: "Internal Server Error" });
-});
+// GLOBAL ERROR HANDLER
+app.use(errorHandler);
 
 // Server start
 const PORT = process.env.PORT || 8000;

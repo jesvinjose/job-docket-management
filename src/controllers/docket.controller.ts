@@ -1,10 +1,15 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import Job from "../models/job.model";
 import Docket from "../models/docket.model";
 import { parseDDMMYYYY } from "../utils/dateParser";
 import { sendApiResponse } from "../utils/sendApiResponse";
+import { HttpError } from "../utils/httpError";
 
-export const createDocket = async (req: Request, res: Response) => {
+export const createDocket = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { jobId } = req.params;
     const { supervisorName, date, labourItems, notes } = req.body;
@@ -12,19 +17,11 @@ export const createDocket = async (req: Request, res: Response) => {
     // Check job
     const job = await Job.findById(jobId);
     if (!job) {
-      return sendApiResponse(res, 404, false, "Job not found", {
-        is_show: true,
-      });
+      throw new HttpError(404, "Job not found");
     }
 
     if (job.status === "closed") {
-      return sendApiResponse(
-        res,
-        409,
-        false,
-        "Job is closed. Cannot create docket.",
-        { is_show: true }
-      );
+      throw new HttpError(409, "Job is closed. Cannot create docket.");
     }
 
     // Validate required fields
@@ -34,31 +31,23 @@ export const createDocket = async (req: Request, res: Response) => {
       !labourItems ||
       !Array.isArray(labourItems)
     ) {
-      return sendApiResponse(res, 400, false, "Missing required fields", {
-        is_show: true,
-      });
+      throw new HttpError(400, "Missing required fields");
     }
 
     if (labourItems.length === 0) {
-      return sendApiResponse(res, 400, false, "labourItems cannot be empty", {
-        is_show: true,
-      });
+      throw new HttpError(400, "labourItems cannot be empty");
     }
 
     labourItems.forEach((item) => {
       if (!item.workerName || !item.role || item.hoursWorked <= 0) {
-        return sendApiResponse(res, 400, false, "Invalid labour item", {
-          is_show: true,
-        });
+        throw new HttpError(400, "Invalid labour item");
       }
     });
 
     // Convert date
     const parsedDate = parseDDMMYYYY(date);
     if (!parsedDate) {
-      return sendApiResponse(res, 400, false, "Invalid date format", {
-        is_show: true,
-      });
+      throw new HttpError(400, "Invalid date format. Must be DD-MM-YYYY");
     }
 
     const docket = await Docket.create({
@@ -74,14 +63,15 @@ export const createDocket = async (req: Request, res: Response) => {
       is_show: true,
     });
   } catch (err: any) {
-    console.error(err);
-    return sendApiResponse(res, 500, false, err?.message || "Server error", {
-      is_show: true,
-    });
+    next(err);
   }
 };
 
-export const getDocketsByJob = async (req: Request, res: Response) => {
+export const getDocketsByJob = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { jobId } = req.params;
     const { from, to, supervisorName } = req.query;
@@ -108,14 +98,15 @@ export const getDocketsByJob = async (req: Request, res: Response) => {
       data: dockets,
     });
   } catch (err) {
-    console.error(err);
-    return sendApiResponse(res, 500, false, "Server error", {
-      is_show: true,
-    });
+    next(err);
   }
 };
 
-export const getDocketSummary = async (_req: Request, res: Response) => {
+export const getDocketSummary = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const totalDockets = await Docket.countDocuments();
 
@@ -148,9 +139,6 @@ export const getDocketSummary = async (_req: Request, res: Response) => {
       }
     );
   } catch (err) {
-    console.error(err);
-    return sendApiResponse(res, 500, false, "Server error", {
-      is_show: true,
-    });
+    next(err);
   }
 };
