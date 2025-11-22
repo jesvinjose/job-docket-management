@@ -1,0 +1,229 @@
+{
+	"info": {
+		"_postman_id": "5ffdf323-6b24-4d14-bb80-7437de86247d",
+		"name": "Job Docket Management API",
+		"description": "Postman Collection for Job–Docket Management Backend (Node.js + Express + MongoDB). Includes Jobs, Dockets, and Summary APIs.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "27687993"
+	},
+	"item": [
+		{
+			"name": "Jobs",
+			"item": [
+				{
+					"name": "Create Job",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"clientName\": \"TATA\",\n  \"siteLocation\": \"Chennai\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/jobs",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"jobs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Jobs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/jobs?page=1&limit=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"jobs"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Job By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/jobs/69219f5cc57ac5e4589ff71b",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"jobs",
+								"69219f5cc57ac5e4589ff71b"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Close Job",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/jobs/{{jobId}}/close",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"jobs",
+								"{{jobId}}",
+								"close"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Dockets",
+			"item": [
+				{
+					"name": "Create Docket",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"supervisorName\": \"Ravi\",\n  \"date\": \"21-11-2025\",\n  \"labourItems\": [\n    { \"workerName\": \"Arun\", \"role\": \"labourer\", \"hoursWorked\": 8 },\n    { \"workerName\": \"Manu\", \"role\": \"electrician\", \"hoursWorked\": 6 }\n  ],\n  \"notes\": \"Work completed\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/dockets/jobs/69219f5cc57ac5e4589ff71b/dockets",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"dockets",
+								"jobs",
+								"69219f5cc57ac5e4589ff71b",
+								"dockets"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Dockets By Job",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/dockets/jobs/69219f5cc57ac5e4589ff71b/dockets?from=01-11-2025&to=30-11-2025",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"dockets",
+								"jobs",
+								"69219f5cc57ac5e4589ff71b",
+								"dockets"
+							],
+							"query": [
+								{
+									"key": "from",
+									"value": "01-11-2025"
+								},
+								{
+									"key": "to",
+									"value": "30-11-2025"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Docket Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/dockets/dockets/summary",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"dockets",
+								"dockets",
+								"summary"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Server Active",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/active",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"active"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "New Request",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000"
+		},
+		{
+			"key": "jobId",
+			"value": "REPLACE_WITH_JOB_ID"
+		}
+	]
+}
