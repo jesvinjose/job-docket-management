@@ -30,7 +30,7 @@ export const validateRequest = (schema: ValidatorSchema) => {
             message: error.details[0].message,
           });
         }
-        req.params = value;
+        Object.assign(req.params, value);
       }
 
       // Validate query
@@ -42,7 +42,7 @@ export const validateRequest = (schema: ValidatorSchema) => {
             message: error.details[0].message,
           });
         }
-        req.query = value;
+        Object.assign(req.query, value);
       }
 
       next();
