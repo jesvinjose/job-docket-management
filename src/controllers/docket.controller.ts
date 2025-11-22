@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Job from "../models/job.model";
 import Docket from "../models/docket.model";
 import { parseDDMMYYYY } from "../utils/dateParser";
+import { sendApiResponse } from "../utils/sendApiResponse";
 
 export const createDocket = async (req: Request, res: Response) => {
   try {
@@ -11,32 +12,53 @@ export const createDocket = async (req: Request, res: Response) => {
     // Check job
     const job = await Job.findById(jobId);
     if (!job) {
-      return res.status(404).json({ status: false, message: "Job not found" });
+      return sendApiResponse(res, 404, false, "Job not found", {
+        is_show: true,
+      });
     }
 
     if (job.status === "closed") {
-      return res.status(409).json({ status: false, message: "Job is closed. Cannot create docket." });
+      return sendApiResponse(
+        res,
+        409,
+        false,
+        "Job is closed. Cannot create docket.",
+        { is_show: true }
+      );
     }
 
     // Validate required fields
-    if (!supervisorName || !date || !labourItems || !Array.isArray(labourItems)) {
-      return res.status(400).json({ status: false, message: "Missing required fields" });
+    if (
+      !supervisorName ||
+      !date ||
+      !labourItems ||
+      !Array.isArray(labourItems)
+    ) {
+      return sendApiResponse(res, 400, false, "Missing required fields", {
+        is_show: true,
+      });
     }
 
     if (labourItems.length === 0) {
-      return res.status(400).json({ status: false, message: "labourItems cannot be empty" });
+      return sendApiResponse(res, 400, false, "labourItems cannot be empty", {
+        is_show: true,
+      });
     }
 
     labourItems.forEach((item) => {
       if (!item.workerName || !item.role || item.hoursWorked <= 0) {
-        throw new Error("Invalid labour item");
+        return sendApiResponse(res, 400, false, "Invalid labour item", {
+          is_show: true,
+        });
       }
     });
 
     // Convert date
     const parsedDate = parseDDMMYYYY(date);
     if (!parsedDate) {
-      return res.status(400).json({ status: false, message: "Invalid date format" });
+      return sendApiResponse(res, 400, false, "Invalid date format", {
+        is_show: true,
+      });
     }
 
     const docket = await Docket.create({
@@ -47,10 +69,15 @@ export const createDocket = async (req: Request, res: Response) => {
       notes,
     });
 
-    res.status(201).json({ status: true, docket });
+    return sendApiResponse(res, 201, true, "Docket created successfully", {
+      data: docket,
+      is_show: true,
+    });
   } catch (err: any) {
     console.error(err);
-    res.status(500).json({ status: false, message: err.message || "Server error" });
+    return sendApiResponse(res, 500, false, err?.message || "Server error", {
+      is_show: true,
+    });
   }
 };
 
@@ -70,15 +97,21 @@ export const getDocketsByJob = async (req: Request, res: Response) => {
 
     // Supervisor filter
     if (supervisorName) {
-      filter.supervisorName = { $regex: new RegExp(supervisorName as string, "i") };
+      filter.supervisorName = {
+        $regex: new RegExp(supervisorName as string, "i"),
+      };
     }
 
     const dockets = await Docket.find(filter).sort({ date: -1 });
 
-    res.json({ status: true, dockets });
+    return sendApiResponse(res, 200, true, "Dockets fetched successfully", {
+      data: dockets,
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ status: false, message: "Server error" });
+    return sendApiResponse(res, 500, false, "Server error", {
+      is_show: true,
+    });
   }
 };
 
@@ -102,13 +135,22 @@ export const getDocketSummary = async (_req: Request, res: Response) => {
       totalHoursByRole[r._id] = r.totalHours;
     });
 
-    res.json({
-      status: true,
-      totalDockets,
-      totalHoursByRole,
-    });
+    return sendApiResponse(
+      res,
+      200,
+      true,
+      "Docket summary fetched successfully",
+      {
+        data: {
+          totalDockets,
+          totalHoursByRole,
+        },
+      }
+    );
   } catch (err) {
     console.error(err);
-    res.status(500).json({ status: false, message: "Server error" });
+    return sendApiResponse(res, 500, false, "Server error", {
+      is_show: true,
+    });
   }
 };
